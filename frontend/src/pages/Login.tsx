@@ -40,11 +40,15 @@ const Login = () => {
       });
       if (!res.ok) throw new Error('Invalid credentials');
       const data = await res.json();
-<<<<<<< HEAD
-      login({ name: data.name || 'User', phone, state: data.state || '', district: data.district || '', token: data.access_token });
-=======
-      login({ name: data.name || 'User', phone, state: data.state || '', location: data.location || '', token: data.token });
->>>>>>> fee26bbf8108ff774ea1d19071a42fd497e46084
+      // Backend TokenResponse: { access_token, token_type, farmer_id, name }
+      login({
+        name: data.name || 'User',
+        phone,
+        state: '',
+        location: '',
+        access_token: data.access_token,
+        farmer_id: data.farmer_id,
+      });
       toast.success('Welcome back!');
       navigate('/dashboard');
     } catch {
@@ -123,7 +127,7 @@ const Login = () => {
             </div>
 
             <button type="submit" disabled={loading}
-              className="w-full rounded-button bg-primary py-3 text-sm font-medium text-primary-foreground hover:bg-green-600 transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
+              className="w-full rounded-button bg-primary py-3 text-sm font-medium text-primary-foreground shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/40 transition-all duration-300 disabled:opacity-60 flex items-center justify-center gap-2">
               {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Signing in...</> : 'Sign In →'}
             </button>
           </form>

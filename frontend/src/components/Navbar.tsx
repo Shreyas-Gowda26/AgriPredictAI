@@ -205,7 +205,7 @@ const Navbar = ({ transparent = false }: { transparent?: boolean }) => {
             ) : (
               <div className="flex items-center gap-3">
                 <Link to="/login" className="hidden sm:inline-flex text-sm font-medium text-gray-600 hover:text-green-600 transition-colors">Sign In</Link>
-                <Link to="/register" className="rounded-button bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-green-600 transition-colors">
+                <Link to="/register" className="rounded-button bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/40 transition-all duration-300">
                   Get Started →
                 </Link>
               </div>
@@ -224,7 +224,7 @@ const Navbar = ({ transparent = false }: { transparent?: boolean }) => {
               </div>
               <div>
                 <p className="text-sm font-semibold text-foreground">{user?.name}</p>
-                <p className="text-xs text-muted-foreground">{user?.district}, {user?.state}</p>
+                <p className="text-xs text-muted-foreground">{user?.location}, {user?.state}</p>
               </div>
             </div>
             <button onClick={() => setMobileOpen(false)} className="p-2">

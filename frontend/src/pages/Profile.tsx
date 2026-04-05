@@ -16,8 +16,8 @@ const Profile = () => {
     name: user?.name || '',
     phone: user?.phone || '',
     state: user?.state || '',
-    district: user?.district || '',
-    farmSize: '2.5',
+    location: user?.location || '',
+    farmSize: String(user?.land_area_acres || ''),
     nitrogen: user?.soilDetails?.nitrogen || 0,
     phosphorus: user?.soilDetails?.phosphorus || 0,
     potassium: user?.soilDetails?.potassium || 0,
@@ -30,8 +30,8 @@ const Profile = () => {
         name: user.name,
         phone: user.phone,
         state: user.state,
-        district: user.district,
-        farmSize: '2.5',
+        location: user.location,
+        farmSize: String(user.land_area_acres || ''),
         nitrogen: user.soilDetails?.nitrogen || 0,
         phosphorus: user.soilDetails?.phosphorus || 0,
         potassium: user.soilDetails?.potassium || 0,
@@ -40,12 +40,14 @@ const Profile = () => {
     }
   }, [user]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    // Update local state immediately
     updateUser({
       name: formData.name,
       phone: formData.phone,
       state: formData.state,
-      district: formData.district,
+      location: formData.location,
+      land_area_acres: parseFloat(formData.farmSize) || undefined,
       soilDetails: {
         nitrogen: Number(formData.nitrogen),
         phosphorus: Number(formData.phosphorus),
@@ -53,6 +55,28 @@ const Profile = () => {
         ph: Number(formData.ph),
       }
     });
+
+    // Also persist soil data to backend (PATCH /auth/profile/soil)
+    if (user?.access_token && user.access_token !== 'demo-token-123') {
+      try {
+        await fetch(import.meta.env.VITE_API_URL + '/auth/profile/soil', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${user.access_token}`,
+          },
+          body: JSON.stringify({
+            nitrogen: Number(formData.nitrogen),
+            phosphorus: Number(formData.phosphorus),
+            potassium: Number(formData.potassium),
+            ph: Number(formData.ph),
+          }),
+        });
+      } catch {
+        // Non-critical: local state already updated
+      }
+    }
+
     setIsEditing(false);
     toast.success('Profile & Soil Data updated!');
   };
@@ -94,7 +118,7 @@ const Profile = () => {
                   <ShieldCheck size={24} className="text-emerald-500" />
                 </h1>
                 <p className="text-gray-500 font-medium flex items-center gap-2">
-                  <MapPin size={16} /> {user?.district}, {user?.state}
+                  <MapPin size={16} /> {user?.location}, {user?.state}
                 </p>
               </div>
             </div>
@@ -177,8 +201,8 @@ const Profile = () => {
                         <MapPin className="absolute left-4 top-3.5 h-5 w-5 text-gray-400" />
                         <input 
                           disabled={!isEditing}
-                          value={formData.district}
-                          onChange={(e) => setFormData({...formData, district: e.target.value})}
+                          value={formData.location}
+                          onChange={(e) => setFormData({...formData, location: e.target.value})}
                           className="w-full bg-gray-50/50 border border-gray-100 rounded-2xl pl-12 pr-4 py-3.5 text-sm font-semibold outline-none focus:ring-2 focus:ring-emerald-500 transition-all disabled:opacity-70"
                         />
                       </div>
@@ -196,12 +220,13 @@ const Profile = () => {
                   </h2>
                 </div>
                 
-                <div className="p-8 grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="p-8 grid md:grid-cols-2 lg:grid-cols-5 gap-5">
                   {[
-                    { label: "Nitrogen (N)", key: "nitrogen", unit: "mg/kg" },
-                    { label: "Phosphorus (P)", key: "phosphorus", unit: "mg/kg" },
-                    { label: "Potassium (K)", key: "potassium", unit: "mg/kg" },
-                    { label: "Soil pH-Level", key: "ph", unit: "" },
+                    { label: "Nitrogen (N)",   key: "nitrogen",        unit: "mg/kg" },
+                    { label: "Phosphorus (P)", key: "phosphorus",      unit: "mg/kg" },
+                    { label: "Potassium (K)",  key: "potassium",       unit: "mg/kg" },
+                    { label: "Soil pH",        key: "ph",              unit: "" },
+                    { label: "Farm Size",      key: "farmSize",        unit: "acres" },
                   ].map(field => (
                     <div key={field.key}>
                       <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 px-1">{field.label}</label>

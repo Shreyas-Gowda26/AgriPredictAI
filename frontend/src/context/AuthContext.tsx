@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { API } from '@/config/api';
 
 interface SoilDetails {
   nitrogen: number;
@@ -31,8 +30,9 @@ interface User {
   phone: string;
   state: string;
   location: string;
-  land_area_acres: number;
-  token: string;
+  land_area_acres?: number;
+  access_token: string;   // JWT — matches backend TokenResponse.access_token
+  farmer_id?: string;     // matches backend TokenResponse.farmer_id
   soilDetails?: SoilDetails;
   reports?: CropReport[];
 }
@@ -53,8 +53,9 @@ const MOCK_USER: User = {
   name: "Ravi Kumar",
   phone: "9999999999",
   state: "Karnataka",
-  district: "Mysuru",
-  token: "demo-token-123",
+  location: "Mysuru",
+  access_token: "demo-token-123",
+  farmer_id: "demo-farmer-id",
   soilDetails: { nitrogen: 68, phosphorus: 42, potassium: 38, ph: 6.8 },
   reports: [
     {
@@ -81,7 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const parsed = JSON.parse(stored);
         setUser(parsed);
-        setIsDemoMode(parsed.token === 'demo-token-123');
+        setIsDemoMode(parsed.access_token === 'demo-token-123');
       } catch {
         localStorage.removeItem('agripredict_user');
       }
@@ -91,7 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = useCallback((data: User) => {
     setUser(data);
-    setIsDemoMode(data.token === 'demo-token-123');
+    setIsDemoMode(data.access_token === 'demo-token-123');
     localStorage.setItem('agripredict_user', JSON.stringify(data));
   }, []);
 

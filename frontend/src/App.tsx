@@ -13,6 +13,7 @@ import Profile from "./pages/Profile";
 import DiseaseDetection from "./pages/DiseaseDetection";
 import Dashboard from "./pages/Dashboard";
 import Blogs from "./pages/Blogs";
+import RecommendCrop from "./pages/RecommendCrop";
 import NotFound from "./pages/NotFound";
 
 import Chatbot from "@/components/Chatbot";
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/predict" element={<ProtectedRoute><PredictYield /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/disease" element={<ProtectedRoute><DiseaseDetection /></ProtectedRoute>} />
+            <Route path="/recommend" element={<ProtectedRoute><RecommendCrop /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/blogs" element={<Blogs />} />
             <Route path="*" element={<NotFound />} />

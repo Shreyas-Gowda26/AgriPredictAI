@@ -4,15 +4,28 @@ import Footer from '@/components/Footer';
 import ErrorCard from '@/components/ErrorCard';
 import { API } from '@/config/api';
 import { useAuth } from '@/context/AuthContext';
-import { Upload, X, Loader2, RotateCcw, Bell, Leaf, FlaskConical, CheckCircle2, Camera } from 'lucide-react';
+import { Upload, X, Loader2, RotateCcw, Bell, Leaf, FlaskConical, CheckCircle2, Camera, Sprout, ShoppingBag, Star, ExternalLink, Tag, Package } from 'lucide-react';
 import { toast } from 'sonner';
 
 
 
-const MOCK_DISEASE = {
+// ─── Unified result type for both API + mock responses ─────────────────────
+interface DiseaseResult {
+  disease: string | null;
+  confidence: number;              // mapped from confidence_percent
+  severity: string | null;
+  crop: string;
+  description: string;
+  organic_treatment?: string[];
+  chemical_treatment?: string[];
+  pesticides: string[];
+  fertilizers: string[];
+}
+
+const MOCK_DISEASE: DiseaseResult = {
   disease: "Rice Blast",
   confidence: 88,
-  severity: "Moderate" as const,
+  severity: "Moderate",
   crop: "Rice",
   description: "Rice blast is caused by the fungus Magnaporthe oryzae. It affects leaves, nodes, and panicles, appearing as diamond-shaped lesions with gray centers.",
   organic_treatment: ["Neem oil spray 2%", "Trichoderma harzianum"],
@@ -21,7 +34,7 @@ const MOCK_DISEASE = {
   fertilizers: ["Apply Potassium (K) based fertilizers", "Avoid excess Nitrogen (N) during active blast phases"]
 };
 
-const MOCK_HEALTHY = {
+const MOCK_HEALTHY: DiseaseResult = {
   disease: null,
   confidence: 95,
   severity: null,
@@ -30,12 +43,58 @@ const MOCK_HEALTHY = {
   pesticides: [],
   fertilizers: ["Standard Nitrogen (N) application", "Zinc Sulfate if soil is deficient"]
 };
-// ... rest of code stays same but I'll update the results display logic below ...
 
-const severityColors = {
+const severityColors: Record<string, string> = {
   Severe: 'bg-red-100 text-red-700',
   Moderate: 'bg-yellow-100 text-yellow-700',
   Mild: 'bg-green-100 text-green-700',
+};
+
+// ─── GreenShift Marketplace Product Data ───────────────────────────────────
+interface MarketProduct {
+  id: string;
+  name: string;
+  brand: string;
+  type: 'pesticide' | 'fertilizer';
+  description: string;
+  price: string;
+  rating: number;
+  reviews: number;
+  badge?: string;
+  emoji: string;
+}
+
+const MARKETPLACE_PRODUCTS: Record<string, MarketProduct[]> = {
+  'Rice Blast': [
+    { id: 'p1', name: 'Trizole 75 WP', brand: 'CropCare India', type: 'pesticide', description: 'Systemic fungicide with Tricyclazole – proven against blast lesions', price: '₹320', rating: 4.6, reviews: 218, badge: 'Best Seller', emoji: '🧪' },
+    { id: 'p2', name: 'Carbo Shield 50', brand: 'GreenShield Labs', type: 'pesticide', description: 'Carbendazim 50% WP – broad-spectrum fungal control', price: '₹280', rating: 4.4, reviews: 145, emoji: '⚗️' },
+    { id: 'f1', name: 'K-Boost Granules', brand: 'NutriGrow', type: 'fertilizer', description: 'High-Potassium formula – strengthens cell walls against blast', price: '₹450', rating: 4.8, reviews: 302, badge: 'Recommended', emoji: '🌿' },
+    { id: 'f2', name: 'Tricho-Root Pro', brand: 'BioFarm Solutions', type: 'fertilizer', description: 'Trichoderma harzianum – organic biocontrol for root and leaf blast', price: '₹390', rating: 4.5, reviews: 178, emoji: '🍃' },
+  ],
+  'Leaf Blight': [
+    { id: 'p3', name: 'Mancozeb 75 WP', brand: 'AgroStar', type: 'pesticide', description: 'Contact fungicide effective against blight, broad spectrum protection', price: '₹260', rating: 4.3, reviews: 189, badge: 'Best Seller', emoji: '🧪' },
+    { id: 'p4', name: 'Copper Oxychloride', brand: 'CropCare India', type: 'pesticide', description: 'Protective and curative action against blight pathogens', price: '₹195', rating: 4.2, reviews: 120, emoji: '⚗️' },
+    { id: 'f3', name: 'Zinc Pro Mix', brand: 'NutriGrow', type: 'fertilizer', description: 'Zinc Sulfate blend that boosts immunity and leaf health', price: '₹340', rating: 4.6, reviews: 210, badge: 'Recommended', emoji: '🌿' },
+    { id: 'f4', name: 'NPK 20-20-20', brand: 'GreenRoot', type: 'fertilizer', description: 'Balanced macro-nutrient blend for rapid recovery', price: '₹420', rating: 4.7, reviews: 265, emoji: '🍃' },
+  ],
+  'Powdery Mildew': [
+    { id: 'p5', name: 'Sulphur 80 WDG', brand: 'GreenShield Labs', type: 'pesticide', description: 'Wettable sulphur – contact action against powdery mildew', price: '₹175', rating: 4.5, reviews: 310, badge: 'Best Seller', emoji: '🧪' },
+    { id: 'p6', name: 'Hexaconazole 5 EC', brand: 'CropCare India', type: 'pesticide', description: 'Systemic triazole fungicide for mildew management', price: '₹290', rating: 4.4, reviews: 142, emoji: '⚗️' },
+    { id: 'f5', name: 'Calcium Boron Plus', brand: 'BioFarm Solutions', type: 'fertilizer', description: 'Strengthens cell walls, reduces mildew susceptibility', price: '₹360', rating: 4.5, reviews: 197, badge: 'Recommended', emoji: '🌿' },
+    { id: 'f6', name: 'Neem Gold Oil 1%', brand: 'NaturaFarm', type: 'fertilizer', description: 'Organic neem oil spray – repels spores and boosts immunity', price: '₹220', rating: 4.3, reviews: 158, emoji: '🍃' },
+  ],
+  default: [
+    { id: 'd1', name: 'Neem 5000 EC', brand: 'NaturaFarm', type: 'pesticide', description: 'Broad-spectrum neem-based bio-pesticide, safe and organic', price: '₹210', rating: 4.4, reviews: 256, badge: 'Top Rated', emoji: '🧪' },
+    { id: 'd2', name: 'Chlorpyrifos 20 EC', brand: 'AgroStar', type: 'pesticide', description: 'General-purpose contact insecticide for crop protection', price: '₹245', rating: 4.2, reviews: 134, emoji: '⚗️' },
+    { id: 'd3', name: 'NPK 19-19-19', brand: 'NutriGrow', type: 'fertilizer', description: 'Premium balanced fertilizer for overall plant health recovery', price: '₹480', rating: 4.7, reviews: 320, badge: 'Recommended', emoji: '🌿' },
+    { id: 'd4', name: 'Humic Acid Gold', brand: 'GreenRoot', type: 'fertilizer', description: 'Soil conditioner that boosts nutrient uptake and root strength', price: '₹310', rating: 4.5, reviews: 175, emoji: '🍃' },
+  ],
+};
+
+const getProducts = (disease: string | null): MarketProduct[] => {
+  if (!disease) return MARKETPLACE_PRODUCTS['default'];
+  const key = Object.keys(MARKETPLACE_PRODUCTS).find(k => disease.toLowerCase().includes(k.toLowerCase()));
+  return MARKETPLACE_PRODUCTS[key || 'default'];
 };
 
 const DiseaseDetection = () => {
@@ -45,7 +104,7 @@ const DiseaseDetection = () => {
   const [preview, setPreview] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [result, setResult] = useState<typeof MOCK_DISEASE | typeof MOCK_HEALTHY | null>(null);
+  const [result, setResult] = useState<DiseaseResult | null>(null);
 
   const handleFile = (f: File) => {
     if (!f.type.startsWith('image/')) { toast.error('Please upload an image file'); return; }
@@ -65,17 +124,31 @@ const DiseaseDetection = () => {
     try {
       const fd = new FormData();
       fd.append('file', file);
-      fd.append('crop', 'Auto-detect');
       const res = await fetch(API.detectDisease, {
         method: 'POST',
         body: fd,
         headers: {
-          'Authorization': `Bearer ${user?.token}`
+          'Authorization': `Bearer ${user?.access_token}`
         }
       });
       if (!res.ok) throw new Error();
       const data = await res.json();
-      setResult(data);
+
+      // Backend DiseaseResponse: { disease, confidence_percent, treatment? }
+      // treatment is a Gemini dict that may contain pesticides/fertilizers/description
+      const treatment = data.treatment || {};
+      const mapped: DiseaseResult = {
+        disease: data.disease ?? null,
+        confidence: Math.round(data.confidence_percent ?? 0),
+        severity: treatment.severity ?? null,
+        crop: treatment.crop ?? 'Unknown',
+        description: treatment.description ?? (data.disease ? '' : 'No disease patterns detected.'),
+        organic_treatment: treatment.organic_treatment ?? [],
+        chemical_treatment: treatment.chemical_treatment ?? [],
+        pesticides: treatment.pesticides ?? [],
+        fertilizers: treatment.fertilizers ?? [],
+      };
+      setResult(mapped);
       setStatus('success');
     } catch {
       await new Promise(r => setTimeout(r, 1500));
@@ -169,8 +242,8 @@ const DiseaseDetection = () => {
               {result.disease ? (
                 <div className="card-premium p-8 lg:p-10 mt-10">
                   <div className="flex items-center justify-between mb-8">
-                    <span className={`rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wider ${severityColors[(result as typeof MOCK_DISEASE).severity]}`}>
-                      {(result as typeof MOCK_DISEASE).severity}
+                    <span className={`rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wider ${result.severity ? severityColors[result.severity] ?? 'bg-gray-100 text-gray-700' : 'bg-gray-100 text-gray-700'}`}>
+                      {result.severity ?? 'Unknown'}
                     </span>
                     <div className="flex items-center gap-2 bg-green-50 px-4 py-1.5 rounded-full border border-green-100">
                       <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
@@ -186,6 +259,7 @@ const DiseaseDetection = () => {
                     <p className="text-gray-600 leading-relaxed">{result.description}</p>
                   </div>
 
+                  {/* ─── Pesticides / Fertilizers Grid ─── */}
                   <div className="grid sm:grid-cols-2 gap-6 mt-6">
                     <div className="p-6 rounded-2xl bg-orange-50 border border-orange-100">
                       <div className="flex items-center gap-3 mb-4">
@@ -221,7 +295,124 @@ const DiseaseDetection = () => {
                     </div>
                   </div>
 
-                  <button onClick={() => toast.info('SMS alerts coming soon!')} className="w-full mt-10 rounded-full border-2 border-primary py-4 text-sm font-bold text-primary hover:bg-primary/5 transition-all flex items-center justify-center gap-3 shadow-sm active:scale-95">
+                  {/* ─── GreenShift Marketplace Suggestions ─── */}
+                  <div className="mt-10">
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/25">
+                          <ShoppingBag className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-base font-black text-gray-900 leading-none">GreenShift Marketplace</p>
+                          <p className="text-xs text-gray-400 font-medium mt-0.5">Products matched to your diagnosis</p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full">
+                        4 Products
+                      </span>
+                    </div>
+
+                    {/* Pesticides row */}
+                    <div className="mb-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <FlaskConical size={14} className="text-orange-500" />
+                        <span className="text-[11px] font-bold text-orange-600 uppercase tracking-widest">Pesticides & Fungicides</span>
+                      </div>
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        {getProducts(result.disease).filter(p => p.type === 'pesticide').map(product => (
+                          <div key={product.id} className="group relative bg-white rounded-2xl border border-gray-100 p-5 hover:border-orange-200 hover:shadow-md hover:shadow-orange-500/10 transition-all duration-300 overflow-hidden">
+                            {product.badge && (
+                              <span className="absolute top-3 right-3 text-[9px] font-black text-orange-600 bg-orange-50 border border-orange-200 px-2 py-1 rounded-full uppercase tracking-wider">
+                                {product.badge}
+                              </span>
+                            )}
+                            <div className="flex items-start gap-3 mb-3">
+                              <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100 flex items-center justify-center text-2xl flex-shrink-0">
+                                {product.emoji}
+                              </div>
+                              <div>
+                                <h5 className="text-sm font-black text-gray-900 leading-tight">{product.name}</h5>
+                                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{product.brand}</p>
+                              </div>
+                            </div>
+                            <p className="text-xs text-gray-500 leading-relaxed mb-4">{product.description}</p>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1">
+                                  {[...Array(5)].map((_, i) => (
+                                    <Star key={i} size={10} className={i < Math.floor(product.rating) ? 'text-amber-400 fill-amber-400' : 'text-gray-200 fill-gray-200'} />
+                                  ))}
+                                </div>
+                                <span className="text-[10px] font-bold text-gray-500">{product.rating} ({product.reviews})</span>
+                              </div>
+                              <span className="text-sm font-black text-gray-900">{product.price}</span>
+                            </div>
+                            <button
+                              onClick={() => toast.info('Redirecting to GreenShift Marketplace...')}
+                              className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-orange-500 text-white text-xs font-bold hover:bg-orange-600 transition-all hover:shadow-md hover:shadow-orange-500/30 group-hover:scale-[1.02]"
+                            >
+                              <ShoppingBag size={12} /> Buy on GreenShift <ExternalLink size={10} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Fertilizers row */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <Sprout size={14} className="text-emerald-500" />
+                        <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-widest">Fertilizers & Boosters</span>
+                      </div>
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        {getProducts(result.disease).filter(p => p.type === 'fertilizer').map(product => (
+                          <div key={product.id} className="group relative bg-white rounded-2xl border border-gray-100 p-5 hover:border-emerald-200 hover:shadow-md hover:shadow-emerald-500/10 transition-all duration-300 overflow-hidden">
+                            {product.badge && (
+                              <span className="absolute top-3 right-3 text-[9px] font-black text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-full uppercase tracking-wider">
+                                {product.badge}
+                              </span>
+                            )}
+                            <div className="flex items-start gap-3 mb-3">
+                              <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 flex items-center justify-center text-2xl flex-shrink-0">
+                                {product.emoji}
+                              </div>
+                              <div>
+                                <h5 className="text-sm font-black text-gray-900 leading-tight">{product.name}</h5>
+                                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{product.brand}</p>
+                              </div>
+                            </div>
+                            <p className="text-xs text-gray-500 leading-relaxed mb-4">{product.description}</p>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1">
+                                  {[...Array(5)].map((_, i) => (
+                                    <Star key={i} size={10} className={i < Math.floor(product.rating) ? 'text-amber-400 fill-amber-400' : 'text-gray-200 fill-gray-200'} />
+                                  ))}
+                                </div>
+                                <span className="text-[10px] font-bold text-gray-500">{product.rating} ({product.reviews})</span>
+                              </div>
+                              <span className="text-sm font-black text-gray-900">{product.price}</span>
+                            </div>
+                            <button
+                              onClick={() => toast.info('Redirecting to GreenShift Marketplace...')}
+                              className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-emerald-500 text-white text-xs font-bold hover:bg-emerald-600 transition-all hover:shadow-md hover:shadow-emerald-500/30 group-hover:scale-[1.02]"
+                            >
+                              <ShoppingBag size={12} /> Buy on GreenShift <ExternalLink size={10} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Footer note */}
+                    <div className="mt-6 flex items-center gap-2 text-[10px] text-gray-400 font-medium">
+                      <Tag size={11} />
+                      Products are matched to your diagnosis and sourced from verified GreenShift sellers.
+                    </div>
+                  </div>
+
+                  <button onClick={() => toast.info('SMS alerts coming soon!')} className="w-full mt-10 rounded-full border-2 border-primary py-4 text-sm font-bold text-primary shadow-sm hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 flex items-center justify-center gap-3">
                     <Bell className="h-5 w-5" /> Set SMS Alert for this diagnosis →
                   </button>
                 </div>
@@ -235,7 +426,7 @@ const DiseaseDetection = () => {
                 </div>
               )}
 
-              <button onClick={reset} className="inline-flex items-center justify-center gap-2 w-full h-[56px] rounded-full border-2 border-primary text-primary font-bold hover:bg-primary/5 transition-all mt-6">
+              <button onClick={reset} className="inline-flex items-center justify-center gap-2 w-full h-[56px] rounded-full border-2 border-primary text-primary font-bold shadow-sm hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 mt-6">
                 <RotateCcw className="h-5 w-5" /> Scan Another Leaf
               </button>
             </div>

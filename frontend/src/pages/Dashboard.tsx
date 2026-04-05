@@ -1,12 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/context/AuthContext';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Sun, Leaf, Calendar, BarChart3, ArrowRight, Search, Bell as BellIcon, BookOpen, AlertTriangle, CheckCircle2, Info, Sprout, ChevronDown } from 'lucide-react';
+import { Sun, Leaf, Calendar, BarChart3, ArrowRight, Search, Bell as BellIcon, BookOpen, Sprout, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
-import { API } from '@/config/api';
 
 const yieldData = [
   { month: "Oct", yield: 1800 }, { month: "Nov", yield: 2100 },
@@ -45,7 +44,7 @@ const Dashboard = () => {
     weekWeather,
     alerts,
     stats: [
-      { icon: Sun, iconBg: 'bg-amber-100', iconColor: 'text-amber-500', label: "Today's Weather", value: "28°C", sub: `Partly Cloudy · ${user?.district || 'Mysuru'}` },
+      { icon: Sun, iconBg: 'bg-amber-100', iconColor: 'text-amber-500', label: "Today's Weather", value: "28°C", sub: `Partly Cloudy · ${user?.location || 'Mysuru'}` },
       { icon: Leaf, iconBg: 'bg-green-100', iconColor: 'text-primary', label: "Active Crop", value: "Rice", sub: "Kharif Season · 2.5 acres" },
       { icon: Calendar, iconBg: 'bg-blue-100', iconColor: 'text-blue-500', label: "Days to Harvest", value: "42 days", sub: "Est. harvest: 15 May" },
       { icon: BarChart3, iconBg: 'bg-purple-100', iconColor: 'text-purple-500', label: "Last Prediction", value: "2,400 kg/ac", sub: "₹38,500 projected profit" },
@@ -76,37 +75,9 @@ const Dashboard = () => {
     ];
   }, [selectedReportId, data.predictions, user?.reports]);
 
-  useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        const res = await fetch(API.dashboard);
-        if (res.ok) {
-          const cloudData = await res.json();
-          const iconMap: { [key: string]: any } = { AlertTriangle, CheckCircle2, Info, Sun, Leaf, Calendar, BarChart3 };
-          
-          const mappedAlerts = cloudData.alerts.map((a: any) => ({
-            ...a,
-            IconComponent: iconMap[a.icon] || AlertTriangle
-          }));
-          
-          const mappedStats = cloudData.stats?.map((s: any) => ({
-            ...s,
-            IconComponent: iconMap[s.icon] || BarChart3
-          }));
-
-          setData(prev => ({ 
-            ...prev, 
-            ...cloudData, 
-            alerts: mappedAlerts,
-            stats: mappedStats || prev.stats 
-          }));
-        }
-      } catch (e) {
-        console.log("Using local mock data for dashboard");
-      }
-    };
-    fetchDashboard();
-  }, []);
+  // Dashboard data is displayed from local state (mock/user reports).
+  // No /dashboard endpoint exists in the backend — AI features use
+  // /yield-input, /detect-disease, /recommend-crop instead.
 
   const greeting = useMemo(() => {
     const h = new Date().getHours();
@@ -138,7 +109,7 @@ const Dashboard = () => {
             </div>
             <div>
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5 leading-none">Your Location</p>
-              <p className="text-xs md:text-sm font-bold text-gray-800 leading-none">{user?.district || 'Mysuru'}, {user?.state || 'Karnataka'}</p>
+              <p className="text-xs md:text-sm font-bold text-gray-800 leading-none">{user?.location || 'Mysuru'}, {user?.state || 'Karnataka'}</p>
             </div>
           </div>
         </div>
@@ -313,7 +284,7 @@ const Dashboard = () => {
                 {data.alerts.map((a: any, i: number) => (
                   <div key={i} className="flex items-start gap-3 p-3 md:p-4 rounded-2xl bg-gray-50 group hover:bg-white hover:shadow-sm transition-all">
                     <div className="h-8 w-8 rounded-lg bg-white flex items-center justify-center shadow-sm flex-shrink-0 animate-ripple">
-                      {a.IconComponent ? <a.IconComponent className="h-4 w-4 text-primary" /> : <AlertTriangle className="h-4 w-4 text-primary" />}
+                      {a.IconComponent ? <a.IconComponent className="h-4 w-4 text-primary" /> : <Sprout className="h-4 w-4 text-primary" />}
                     </div>
                     <div>
                       <p className="text-xs md:text-sm font-bold text-gray-900 leading-tight mb-0.5">{a.title}</p>
@@ -329,10 +300,10 @@ const Dashboard = () => {
               <h2 className="text-base md:text-xl font-bold tracking-tight mb-4">Quick Actions</h2>
               <div className="grid grid-cols-2 md:grid-cols-2 gap-3">
                 {[
-                  { icon: BarChart3, label: "Predict", to: "/predict" },
-                  { icon: Search, label: "Detection", to: "/disease" },
-                  { icon: BellIcon, label: "Alerts", to: null },
-                  { icon: BookOpen, label: "Guide", to: null },
+                  { icon: BarChart3, label: "Predict",   to: "/predict" },
+                  { icon: Search,    label: "Detection",  to: "/disease" },
+                  { icon: Leaf,      label: "Recommend",  to: "/recommend" },
+                  { icon: BookOpen,  label: "Guide",      to: null },
                 ].map((action, i) => (
                   <Link key={i} to={action.to || "#"} onClick={() => !action.to && toast.info("Coming soon!")}
                     className="flex flex-col items-center justify-center p-4 rounded-2xl bg-gray-50 hover:bg-white transition-all shadow-sm active:scale-95 group">
