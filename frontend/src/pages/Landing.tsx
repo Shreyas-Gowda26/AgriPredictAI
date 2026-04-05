@@ -36,7 +36,7 @@ const features = [
 ];
 
 const steps = [
-  { num: "01", title: "Create Your Account", body: "Register with your phone number and tell us your state and district." },
+  { num: "01", title: "Create Your Account", body: "Register with your phone number and tell us your state and location." },
   { num: "02", title: "Enter Farm Details", body: "Select your crop, soil type, and area. Or upload a leaf photo for disease check." },
   { num: "03", title: "Get AI Predictions", body: "Receive yield forecasts, disease diagnosis, and actionable recommendations in seconds." },
 ];
