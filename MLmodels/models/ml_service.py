@@ -11,15 +11,18 @@ from dotenv import load_dotenv
 load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-crop_model = joblib.load('models/rf_crop_model.pkl')
-crop_scaler = joblib.load('models/crop_scaler.pkl')
-crop_encoder = joblib.load('models/crop_label_encoder.pkl')
-disease_model = load_model('models/disease_cnn_model.h5')
-with open('models/disease_classes.json', 'r') as f:
+import os
+MODEL_DIR = os.path.join(os.path.dirname(__file__))
+
+crop_model = joblib.load(os.path.join(MODEL_DIR, 'rf_crop_model.pkl'))
+crop_scaler = joblib.load(os.path.join(MODEL_DIR, 'crop_scaler.pkl'))
+crop_encoder = joblib.load(os.path.join(MODEL_DIR, 'crop_label_encoder.pkl'))
+disease_model = load_model(os.path.join(MODEL_DIR, 'disease_cnn_model.h5'))
+with open(os.path.join(MODEL_DIR, 'disease_classes.json'), 'r') as f:
     disease_classes = json.load(f)
-yield_model = load_model('models/yield_lstm_model.h5', compile=False)
-yield_scaler = joblib.load('models/yield_lstm_scaler.pkl')
-yield_encoders = joblib.load('models/yield_lstm_encoders.pkl')
+yield_model = load_model(os.path.join(MODEL_DIR, 'yield_lstm_model.h5'), compile=False)
+yield_scaler = joblib.load(os.path.join(MODEL_DIR, 'yield_lstm_scaler.pkl'))
+yield_encoders = joblib.load(os.path.join(MODEL_DIR, 'yield_lstm_encoders.pkl'))
 
 def predict_crop(N: float, P: float, K: float, temperature: float, humidity: float, ph: float, rainfall: float):
     """Feature 2: Crop Recommendation"""
@@ -31,7 +34,7 @@ def predict_crop(N: float, P: float, K: float, temperature: float, humidity: flo
 
 def predict_disease(image_bytes: bytes):
     """Feature 1: Disease Detection"""
-    img = Image.open(io.BytesIO(image_bytes)).convert('RGB').resize((128, 128))
+    img = Image.open(io.BytesIO(image_bytes)).resize((128, 128))
     img_array = np.array(img) / 255.0
     img_array = np.expand_dims(img_array, axis=0)
 
@@ -88,3 +91,5 @@ def get_disease_treatment_advice(disease_name: str):
 
     except Exception as e:
         return {"error": f"Failed to generate treatment advice: {str(e)}"}
+
+get_disease_treatment = get_disease_treatment_advice
