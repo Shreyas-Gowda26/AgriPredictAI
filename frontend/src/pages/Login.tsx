@@ -40,7 +40,7 @@ const Login = () => {
       });
       if (!res.ok) throw new Error('Invalid credentials');
       const data = await res.json();
-      login({ name: data.name || 'User', phone, state: data.state || '', district: data.district || '', token: data.token });
+      login({ name: data.name || 'User', phone, state: data.state || '', location: data.location || '', token: data.token });
       toast.success('Welcome back!');
       navigate('/dashboard');
     } catch {
